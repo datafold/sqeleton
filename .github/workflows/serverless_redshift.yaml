@@ -1,0 +1,38 @@
+name: 'test'
+on:
+  push:
+    branches:
+    - 'main'
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
+
+jobs:
+  run:
+    name: 'test run'
+    runs-on: 'ubuntu-latest'
+
+    steps:
+      - uses: 'actions/checkout@v3'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.AWS_ASSUMED_ROLE }}
+          aws-region: eu-west-1
+
+      - name: aws command
+        run: aws configure list && aws redshift-serverless list-namespaces
+
+      - name: install psql
+        run: |
+          sudo apt-get update --yes && sudo apt-get install --yes postgresql-client
+
+      - name: Query
+        run: psql -h $POSTGRES_HOST -d $POSTGRES_DB -p 5439 -U $POSTGRES_USER -c 'SELECT * FROM pg_database;'
+        env:
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
