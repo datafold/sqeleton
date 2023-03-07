@@ -194,6 +194,19 @@ class Oracle(ThreadedDatabase):
         except self._oracle.DatabaseError as e:
             raise QueryError(e)
 
+    def query_table_schema(self, path: DbPath) -> Dict[str, tuple]:
+        rows = self.query(self.select_table_schema(path), list)
+        if not rows:
+            raise RuntimeError(f"{self.name}: Table '{'.'.join(path)}' does not exist, or has no columns")
+
+        d = {r[0]: r for r in rows}
+        
+        # all oracle tables have a ROWID pseudocolumn
+        d['ROWID'] = ('ROWID', 'VARCHAR2', 6, None, None)
+
+        assert (len(d)-1) == len(rows)
+        return d
+
     def select_table_schema(self, path: DbPath) -> str:
         schema, name = self._normalize_table_path(path)
 
