@@ -139,7 +139,7 @@ class CaseSensitiveDict(dict, CaseAwareMapping):
 
 # -- Alphanumerics --
 
-alphanums = " -" + string.digits + string.ascii_uppercase + "_" + string.ascii_lowercase
+alphanums = " +-./" + string.digits + string.ascii_uppercase + "_" + string.ascii_lowercase
 
 
 class ArithString:
