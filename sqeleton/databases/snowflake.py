@@ -164,24 +164,42 @@ class Snowflake(Database):
         assert '"' not in schema, "Schema name should not contain quotes!"
         # If a private key is used, read it from the specified path and pass it as "private_key" to the connector.
         if "key" in kw:
-            with open(kw.get("key"), "rb") as key:
-                if "password" in kw:
-                    raise ConnectError("Cannot use password and key at the same time")
-                p_key = serialization.load_pem_private_key(
-                    key.read(),
-                    password=None,
-                    backend=default_backend(),
-                )
-
-            kw["private_key"] = p_key.private_bytes(
-                encoding=serialization.Encoding.DER,
-                format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption(),
-            )
-
+            if "password" in kw:
+                raise ConnectError("Cannot use password and key at the same time")
+            kw["private_key"] = self._get_private_key(kw, serialization, default_backend)
         self._conn = snowflake.connector.connect(schema=f'"{schema}"', **kw)
 
         self.default_schema = schema
+
+    @staticmethod
+    def _get_private_key(kw, serialization, default_backend):
+        """Get Snowflake private key by path, from a Base64 encoded DER bytestring or None."""
+        if kw.get("private_key") and kw.get("private_key_path"):
+            raise Exception("Cannot specify both `private_key` and `private_key_path`")
+        if kw.get("private_key_passphrase"):
+            encoded_passphrase = kw.get("private_key_passphrase").encode()
+        else:
+            encoded_passphrase = None
+
+        if kw.get("private_key"):
+            p_key = serialization.load_der_private_key(
+                base64.b64decode(kw.get("private_key")),
+                password=encoded_passphrase,
+                backend=default_backend(),
+            )
+        elif kw.get("private_key_path"):
+            with open(kw.get("private_key_path"), "rb") as key:
+                p_key = serialization.load_pem_private_key(
+                    key.read(), password=encoded_passphrase, backend=default_backend()
+                )
+        else:
+            return None
+
+        return p_key.private_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
 
     def close(self):
         super().close()
