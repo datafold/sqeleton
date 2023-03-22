@@ -163,7 +163,7 @@ class Snowflake(Database):
 
         assert '"' not in schema, "Schema name should not contain quotes!"
         # If a private key is used, read it from the specified path and pass it as "private_key" to the connector.
-        if "key" in kw:
+        if "key" in kw or "key_path" in kw:
             if "password" in kw:
                 raise ConnectError("Cannot use password and key at the same time")
             kw["private_key"] = self._get_private_key(kw, serialization, default_backend)
