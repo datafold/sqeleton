@@ -162,7 +162,6 @@ class Snowflake(Database):
         logging.getLogger("snowflake.connector.network").disabled = True
 
         assert '"' not in schema, "Schema name should not contain quotes!"
-        print(kw)
         # If a private key is used, read it from the specified path and pass it as "private_key" to the connector.
         if "key" in kw:
             if "password" in kw:
