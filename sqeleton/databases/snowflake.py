@@ -162,6 +162,7 @@ class Snowflake(Database):
         logging.getLogger("snowflake.connector.network").disabled = True
 
         assert '"' not in schema, "Schema name should not contain quotes!"
+        print(kw)
         # If a private key is used, read it from the specified path and pass it as "private_key" to the connector.
         if "key" in kw:
             if "password" in kw:
@@ -174,21 +175,21 @@ class Snowflake(Database):
     @staticmethod
     def _get_private_key(kw, serialization, default_backend):
         """Get Snowflake private key by path, from a Base64 encoded DER bytestring or None."""
-        if kw.get("private_key") and kw.get("private_key_path"):
+        if kw.get("key") and kw.get("key_path"):
             raise Exception("Cannot specify both `private_key` and `private_key_path`")
-        if kw.get("private_key_passphrase"):
-            encoded_passphrase = kw.get("private_key_passphrase").encode()
+        if kw.get("key_passphrase"):
+            encoded_passphrase = kw.get("key_passphrase").encode()
         else:
             encoded_passphrase = None
 
-        if kw.get("private_key"):
+        if kw.get("key"):
             p_key = serialization.load_der_private_key(
-                base64.b64decode(kw.get("private_key")),
+                base64.b64decode(kw.get("key")),
                 password=encoded_passphrase,
                 backend=default_backend(),
             )
-        elif kw.get("private_key_path"):
-            with open(kw.get("private_key_path"), "rb") as key:
+        elif kw.get("key_path"):
+            with open(kw.get("key_path"), "rb") as key:
                 p_key = serialization.load_pem_private_key(
                     key.read(), password=encoded_passphrase, backend=default_backend()
                 )
